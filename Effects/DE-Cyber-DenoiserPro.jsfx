@@ -1,12 +1,7 @@
-desc: Cyber-Denoiser PRO (10-Band Forensic)
+desc: Cyber-Denoiser PRO (10-Band Forensic - V85)
 version: 1.0
-author: Dan Marshall
-changelog: Initial release with streamlined dashboard and crash-proof timer logic.
-Provides: cyber_denoiser_pro.jsfx
-about:
-  # Cyber-Denoiser PRO
-  A high-precision, 10-band forensic denoiser optimized for x86 architectures and L3 cache efficiency.
-  Features a real-time "Static" dashboard and automated noise floor analysis.
+author: Danny Marshall
+changelog: Master Release - Integrated Phase Glide Smoothing for distortion-free fades.
 
 options:gmem=DenoisePro
 
@@ -34,6 +29,7 @@ slider20:0<0,1,1>-ListenNoise
 i=1; loop(20, slider_show(i, 0); i+=1; );
 r1=r2=r3=r4=r5=r6=r7=r8=r9=r10=0;
 g1=g2=g3=g4=g5=g6=g7=g8=g9=g10=1;
+tg1=tg2=tg3=tg4=tg5=tg6=tg7=tg8=tg9=tg10=1;
 p1=p2=p3=p4=p5=p6=p7=p8=p9=p10=0.00001;
 learn_start = -1; m_latch = 0; last_v = 0;
 rms_f = 1 - exp(-1 / (0.050 * srate)); 
@@ -41,6 +37,7 @@ rms_f = 1 - exp(-1 / (0.050 * srate));
 @slider
 att = exp(-1 / (slider11 * srate / 1000));
 rel = (slider12 == 0) ? 0 : exp(-1 / (slider12 * srate / 1000));
+sm_f = 1 - exp(-1 / (15 * srate / 1000)); 
 
 @sample
 s0 = spl0;
@@ -71,25 +68,25 @@ slider17 ? (
   r7=r7*rel+abs(b7)*(1-rel); r8=r8*rel+abs(b8)*(1-rel); r9=r9*rel+abs(b9)*(1-rel); r10=r10*rel+abs(b10)*(1-rel);
 );
 
-function calc_g(r_in, t_db, gn, f_lv) (
+function calc_tg(r_in, t_db, gn, f_lv) (
   r_db = 20*log10(r_in+0.000001); diff = r_db - t_db;
   diff >= 0 ? 1 : (diff <= -gn ? f_lv : f_lv + (1-f_lv) * ((diff + gn) / gn));
 );
 
 gn = slider15; f_v = slider13;
-g1=g1*att + calc_g(r1, slider1, gn, f_v)*(1-att);
-g2=g2*att + calc_g(r2, slider2, gn, f_v)*(1-att);
-g3=g3*att + calc_g(r3, slider3, gn, f_v)*(1-att);
-g4=g4*att + calc_g(r4, slider4, gn, f_v)*(1-att);
-g5=g5*att + calc_g(r5, slider5, gn, f_v)*(1-att);
-g6=g6*att + calc_g(r6, slider6, gn, f_v)*(1-att);
-g7=g7*att + calc_g(r7, slider7, gn, f_v)*(1-att);
-g8=g8*att + calc_g(r8, slider8, gn, f_v)*(1-att);
-g9=g9*att + calc_g(r9, slider9, gn, f_v)*(1-att);
-g10=g10*att + calc_g(r10, slider10, gn, f_v)*(1-att);
+tg1 = tg1*att + calc_tg(r1, slider1, gn, f_v)*(1-att); g1 += (tg1 - g1) * sm_f;
+tg2 = tg2*att + calc_tg(r2, slider2, gn, f_v)*(1-att); g2 += (tg2 - g2) * sm_f;
+tg3 = tg3*att + calc_tg(r3, slider3, gn, f_v)*(1-att); g3 += (tg3 - g3) * sm_f;
+tg4 = tg4*att + calc_tg(r4, slider4, gn, f_v)*(1-att); g4 += (tg4 - g4) * sm_f;
+tg5 = tg5*att + calc_tg(r5, slider5, gn, f_v)*(1-att); g5 += (tg5 - g5) * sm_f;
+tg6 = tg6*att + calc_tg(r6, slider6, gn, f_v)*(1-att); g6 += (tg6 - g6) * sm_f;
+tg7 = tg7*att + calc_tg(r7, slider7, gn, f_v)*(1-att); g7 += (tg7 - g7) * sm_f;
+tg8 = tg8*att + calc_tg(r8, slider8, gn, f_v)*(1-att); g8 += (tg8 - g8) * sm_f;
+tg9 = tg9*att + calc_tg(r9, slider9, gn, f_v)*(1-att); g9 += (tg9 - g9) * sm_f;
+tg10 = tg10*att + calc_tg(r10, slider10, gn, f_v)*(1-att); g10 += (tg10 - g10) * sm_f;
 
 out_sum = b1*g1+b2*g2+b3*g3+b4*g4+b5*g5+b6*g6+b7*g7+b8*g8+b9*g9+b10*g10;
-slider20 ? (spl0=spl1=(s0 - out_sum);) : (spl0=spl1=out_sum;);
+spl0=spl1 = slider20 ? (s0 - out_sum) : out_sum;
 
 learn_start > 0 ? (
   elap = time_precise() - learn_start;
