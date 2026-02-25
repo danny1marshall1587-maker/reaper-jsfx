@@ -1,4 +1,4 @@
-# Cyber-Forensic Denoiser Suite
+cyber denoise
 
 A 10-band surgical spectral denoiser designed for forensic-level noise destruction in real-time. This plugin is surgically engineered to leverage the **AMD Ryzen 5700X3D's** massive L3 cache for ultra-stable performance at **64-sample buffers**.
 
