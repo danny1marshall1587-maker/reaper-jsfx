@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<index version="1" name="dan marshall Scripts">
+  <category name="Effects">
+    <reapack name="Cyber-Denoiser.jsfx" type="effect">
+      <version name="1.0">
+        <source main="main">https://raw.githubusercontent.com/YourUser/YourRepo/main/Effects/Cyber-Denoiser.jsfx</source>
+      </version>
+    </reapack>
+  </category>
+</index>
