@@ -1,12 +1,8 @@
-desc: Cyber-Denoiser LITE (5-Band Forensic)
+desc: Cyber-Denoiser LITE (5-Band Forensic - V84)
 version: 1.0
-author: Dan Marshall
-changelog: Standardized streamlined dashboard with Neon Inferno palette.
-Provides: cyber_denoiser_lite.jsfx
-about:
-  # Cyber-Denoiser LITE
-  A high-efficiency, 5-band denoiser optimized for Forensic "Problem Zones" (Rumble, Mud, Presence, Hiss, Air).
-  Uses acid-neon colors to differentiate from the Pro version.
+author: Danny Marshall
+changelog: Integrated Linear Phase Smoothing to prevent distortion on signal tails.
+// Optimized for Forensic "Problem Zone" isolation at ultra-low CPU cost.
 
 options:gmem=DenoiseLite
 
@@ -35,16 +31,21 @@ rms_f = 1 - exp(-1 / (0.050 * srate));
 @slider
 att = exp(-1 / (slider11 * srate / 1000));
 rel = (slider12 == 0) ? 0 : exp(-1 / (slider12 * srate / 1000));
+// Forensic Smoothing: 15ms window to prevent phase distortion on fades
+sm_f = 1 - exp(-1 / (15 * srate / 1000)); 
 
 @sample
 s0 = spl0;
 slider18 ? (hp_f=40*2*$pi/srate; hp_in+=(s0-hp_in)*hp_f; s0-=hp_in;);
+
+// Forensic Range Mapping (Logarithmic spacing)
 f = 150/srate; 
 lp1+=(s0-lp1)*f; b1=lp1;           
 lp2+=(s0-lp2)*f*4; b2=lp2-lp1;     
 lp3+=(s0-lp3)*f*20; b3=lp3-lp2;    
 lp4+=(s0-lp4)*f*53; b4=lp4-lp3;    
 b5=s0-lp4;                        
+
 slider17 ? (
   e1+=(b1*b1-e1)*rms_f; r1=sqrt(max(0,e1)); e2+=(b2*b2-e2)*rms_f; r2=sqrt(max(0,e2));
   e3+=(b3*b3-e3)*rms_f; r3=sqrt(max(0,e3)); e4+=(b4*b4-e4)*rms_f; r4=sqrt(max(0,e4));
@@ -53,18 +54,31 @@ slider17 ? (
   r1=r1*rel+abs(b1)*(1-rel); r2=r2*rel+abs(b2)*(1-rel); r3=r3*rel+abs(b3)*(1-rel);
   r4=r4*rel+abs(b4)*(1-rel); r5=r5*rel+abs(b5)*(1-rel);
 );
-function calc_g(r_in, t_db, gn, f_lv) (
+
+function calc_target(r_in, t_db, gn, f_lv) (
   r_db = 20*log10(r_in+0.000001); diff = r_db - t_db;
   diff >= 0 ? 1 : (diff <= -gn ? f_lv : f_lv + (1-f_lv) * ((diff + gn) / gn));
 );
+
 gn = slider15; f_v = slider13;
-g1=g1*att + calc_g(r1, slider1, gn, f_v)*(1-att);
-g2=g2*att + calc_g(r2, slider2, gn, f_v)*(1-att);
-g3=g3*att + calc_g(r3, slider3, gn, f_v)*(1-att);
-g4=g4*att + calc_g(r4, slider4, gn, f_v)*(1-att);
-g5=g5*att + calc_g(r5, slider5, gn, f_v)*(1-att);
+
+// Apply Attack/Release logic first
+tg1 = tg1*att + calc_target(r1, slider1, gn, f_v)*(1-att);
+tg2 = tg2*att + calc_target(r2, slider2, gn, f_v)*(1-att);
+tg3 = tg3*att + calc_target(r3, slider3, gn, f_v)*(1-att);
+tg4 = tg4*att + calc_target(r4, slider4, gn, f_v)*(1-att);
+tg5 = tg5*att + calc_target(r5, slider5, gn, f_v)*(1-att);
+
+// NEW: Phase Smoothing Glide (Prevents distortion on guitar tails)
+g1 += (tg1 - g1) * sm_f;
+g2 += (tg2 - g2) * sm_f;
+g3 += (tg3 - g3) * sm_f;
+g4 += (tg4 - g4) * sm_f;
+g5 += (tg5 - g5) * sm_f;
+
 out_sum = b1*g1+b2*g2+b3*g3+b4*g4+b5*g5;
 slider20 ? (spl0=spl1=(s0 - out_sum);) : (spl0=spl1=out_sum;);
+
 learn_start > 0 ? (
   elap = time_precise() - learn_start;
   elap < slider14 ? (
@@ -75,14 +89,17 @@ learn_start > 0 ? (
     slider_automate(31); learn_start = -1;
   );
 );
+
 (time_precise() - last_v > 0.04) ? (
   gmem[0]=r1; gmem[1]=r2; gmem[2]=r3; gmem[3]=r4; gmem[4]=r5;
   gmem[10]=g1; gmem[11]=g2; gmem[12]=g3; gmem[13]=g4; gmem[14]=g5;
   last_v = time_precise();
 );
+
 @gfx 840 640
 gfx_r=0.02; gfx_g=0.01; gfx_b=0.01; gfx_rect(0,0,gfx_w,gfx_h);
 m_w = gfx_w / 5; v_h = gfx_h * 0.48; btn_y = v_h + 80; sld_y = btn_y + 80; pad = m_w * 0.25; 
+
 click=(mouse_cap==1 && m_latch==0); m_latch=(mouse_cap==1);
 mouse_cap == 1 ? (
   mouse_y < v_h ? (
