@@ -1,6 +1,6 @@
 desc: Cyber-Denoiser LITE (5-Band Forensic)
 version: 1.0
-author: Danny Marshall
+author: Dan Marshall
 changelog: Standardized streamlined dashboard with Neon Inferno palette.
 Provides: cyber_denoiser_lite.jsfx
 about:
