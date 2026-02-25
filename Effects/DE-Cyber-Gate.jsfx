@@ -1,12 +1,7 @@
-desc: Cyber-Gate (Toxic Ultra-Lite Forensic)
+desc: Cyber-Gate (Toxic Ultra-Lite Forensic - V85)
 version: 1.0
-author: Dan Marshall
-changelog: Standardized streamlined dashboard with Toxic Cyber palette.
-Provides: cyber_gate.jsfx
-about:
-  # Cyber-Gate
-  An ultra-light, single-band gate optimized for forensics.
-  Uses toxic-lime colors to signify the highest performance tier.
+author: Danny Marshall
+changelog: Master Release - Added Toxic Palette and Phase Tail Smoothing.
 
 options:gmem=CyberGate
 
@@ -22,26 +17,29 @@ slider20:0<0,1,1>-ListenNoise
 
 @init
 i=1; loop(20, slider_show(i, 0); i+=1; );
-r1=0; g1=1; p1=0.00001;
+r1=0; g1=1; tg1=1; p1=0.00001;
 learn_start = -1; m_latch = 0; last_v = 0;
 rms_f = 1 - exp(-1 / (0.050 * srate));
 
 @slider
 att = exp(-1 / (slider11 * srate / 1000));
 rel = (slider12 == 0) ? 0 : exp(-1 / (slider12 * srate / 1000));
+sm_f = 1 - exp(-1 / (20 * srate / 1000)); 
 
 @sample
 s0 = spl0;
 slider18 ? (hp_f=40*2*$pi/srate; hp_in+=(s0-hp_in)*hp_f; s0-=hp_in;);
 slider17 ? ( e1+=(s0*s0-e1)*rms_f; r1=sqrt(max(0,e1)); ) : ( r1=r1*rel+abs(s0)*(1-rel); );
-function calc_g(r_in, t_db, gn, f_lv) (
+function calc_tg(r_in, t_db, gn, f_lv) (
   r_db = 20*log10(r_in+0.000001); diff = r_db - t_db;
   diff >= 0 ? 1 : (diff <= -gn ? f_lv : f_lv + (1-f_lv) * ((diff + gn) / gn));
 );
 gn = slider15; f_v = slider13;
-g1=g1*att + calc_g(r1, slider1, gn, f_v)*(1-att);
+tg1 = tg1*att + calc_tg(r1, slider1, gn, f_v)*(1-att); g1 += (tg1 - g1) * sm_f;
+
 out_sum = s0 * g1;
-slider20 ? (spl0=spl1=(s0 - out_sum);) : (spl0=spl1=out_sum;);
+spl0=spl1 = slider20 ? (s0 - out_sum) : out_sum;
+
 learn_start > 0 ? (
   elap = time_precise() - learn_start;
   elap < slider14 ? ( p1=max(p1,r1); ) : ( slider1=20*log10(p1)+3; slider_automate(1); learn_start = -1; );
