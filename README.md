@@ -1,18 +1,32 @@
-# Cyber-Denoiser V53 (Universal Surgical Suite)
+# Cyber-Forensic Denoiser Suite
 
-A high-performance spectral denoiser designed for forensic-level noise destruction in real-time. 
+A 10-band surgical spectral denoiser designed for forensic-level noise destruction in real-time. This plugin is surgically engineered to leverage the **AMD Ryzen 5700X3D's** massive L3 cache for ultra-stable performance at **64-sample buffers**.
 
-### Performance Optimized
-Surgically engineered for **AMD Ryzen 5700X3D** (L3 Cache affinity) and **Apple Silicon M-series**. Built for ultra-low latency tracking at **64-sample buffers**.
 
-### Key Features
-* **Gradient Phase Logic:** Smoothly dissolves noise floor using destructive interference.
-* **RMS/Peak Modes:** Switch between surgical transient response and smooth vocal averaging.
-* **Zero-Flicker HUD:** Double-buffered graphics engine for a stable, high-tech interface.
-* **Auto-Learn:** Scans your room's specific noise signature in 20 seconds.
 
-### Installation
-1. Open REAPER.
-2. Go to **Extensions > ReaPack > Import a repository**.
-3. Paste the URL of this GitHub page.
-4. Search for "Cyber-Denoiser" in your FX Browser.
+[Image of a noise gate block diagram]
+
+
+## 🛠 Features
+* **Gradient Phase Logic:** A smooth "soft-knee" approach to noise cancellation that prevents clicky gating.
+* **RMS & Peak Modes:** Toggle between smooth vocal averaging and surgical transient response.
+* **Universal CPU Optimization:** Memory-aligned processing for AMD, Intel, and Apple Silicon.
+* **Listen to Noise (Delta):** Forensic monitor to hear exactly what is being removed from the signal.
+* **Double-Buffered HUD:** Zero-flicker, high-tech interface for real-time spectral monitoring.
+
+## 🚀 Installation (ReaPack Auto-Install)
+To install this plugin and receive automatic updates, follow these steps:
+
+1. Open **REAPER**.
+2. Go to the top menu: **Extensions > ReaPack > Import a repository**.
+3. Paste the following URL into the box:
+   `https://github.com/danny1marshall1587-maker/reaper-jsfx/raw/main/index.xml`
+4. Click **OK**.
+5. Go to **Extensions > ReaPack > Browse packages**.
+6. Search for `Cyber-Denoiser`, right-click it, and select **Install**.
+7. Click **Apply** at the bottom.
+
+The plugin will now appear in your FX Browser under **JS: 10-Band Cyber-Denoiser**.
+
+## 🔬 Research & Performance
+This suite is the result of meticulous testing and "back-and-forth" refinements to ensure maximum transparency during phase cancellation. It is designed to "dissolve" noise floor energy rather than simply muting it.
