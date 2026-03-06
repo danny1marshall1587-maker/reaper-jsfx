@@ -1,7 +1,11 @@
-desc: Cyber-Denoiser PRO (10-Band Forensic - V85)
-version: 1.0
+desc: Cyber-Denoiser PRO (10-Band Forensic - V1.4)
+version: 1.4
 author: Danny Marshall
-changelog: Master Release - Integrated Phase Glide Smoothing for distortion-free fades.
+changelog: Master Release - Parallel Ghost Subtraction, Hysteresis, and Master Sync.
+about:
+  # Cyber-Denoiser PRO
+  10-band forensic restoration with constant phase-cancellation. 
+  Optimized for AMD 5700X3D L3 cache efficiency.
 
 options:gmem=DenoisePro
 
@@ -24,20 +28,41 @@ slider17:0<0,1,1>-RMSMode
 slider18:1<0,1,1>-LowCut
 slider19:1<0,1,1>-HighCut
 slider20:0<0,1,1>-ListenNoise
+slider21:3<0,12,1>-Hysteresis (dB)
+slider22:0<-100,0,1>-Master Threshold
 
 @init
-i=1; loop(20, slider_show(i, 0); i+=1; );
+i=1; loop(22, slider_show(i, 0); i+=1; );
 r1=r2=r3=r4=r5=r6=r7=r8=r9=r10=0;
 g1=g2=g3=g4=g5=g6=g7=g8=g9=g10=1;
 tg1=tg2=tg3=tg4=tg5=tg6=tg7=tg8=tg9=tg10=1;
+s1=s2=s3=s4=s5=s6=s7=s8=s9=s10=0; 
 p1=p2=p3=p4=p5=p6=p7=p8=p9=p10=0.00001;
 learn_start = -1; m_latch = 0; last_v = 0;
-rms_f = 1 - exp(-1 / (0.050 * srate)); 
+last_master = slider22;
+rms_f = 1 - exp(-1 / (0.050 * srate));
 
 @slider
 att = exp(-1 / (slider11 * srate / 1000));
 rel = (slider12 == 0) ? 0 : exp(-1 / (slider12 * srate / 1000));
 sm_f = 1 - exp(-1 / (15 * srate / 1000)); 
+hys = slider21;
+
+slider22 != last_master ? (
+  diff = slider22 - last_master;
+  slider1 = max(-100, min(0, slider1 + diff));
+  slider2 = max(-100, min(0, slider2 + diff));
+  slider3 = max(-100, min(0, slider3 + diff));
+  slider4 = max(-100, min(0, slider4 + diff));
+  slider5 = max(-100, min(0, slider5 + diff));
+  slider6 = max(-100, min(0, slider6 + diff));
+  slider7 = max(-100, min(0, slider7 + diff));
+  slider8 = max(-100, min(0, slider8 + diff));
+  slider9 = max(-100, min(0, slider9 + diff));
+  slider10 = max(-100, min(0, slider10 + diff));
+  last_master = slider22;
+  slider_automate(1023);
+);
 
 @sample
 s0 = spl0;
@@ -68,22 +93,24 @@ slider17 ? (
   r7=r7*rel+abs(b7)*(1-rel); r8=r8*rel+abs(b8)*(1-rel); r9=r9*rel+abs(b9)*(1-rel); r10=r10*rel+abs(b10)*(1-rel);
 );
 
-function calc_tg(r_in, t_db, gn, f_lv) (
-  r_db = 20*log10(r_in+0.000001); diff = r_db - t_db;
-  diff >= 0 ? 1 : (diff <= -gn ? f_lv : f_lv + (1-f_lv) * ((diff + gn) / gn));
+function calc_ghost_g(r_in, t_db, h_db, gn, f_lv, st) (
+  r_db = 20*log10(r_in+0.000001);
+  st = (r_db > t_db) ? 1 : (r_db < (t_db - h_db)) ? 0 : st;
+  (st == 1) ? 1 : (r_db <= (t_db - gn) ? f_lv : f_lv + (1-f_lv) * ((r_db - (t_db-gn)) / gn));
 );
 
 gn = slider15; f_v = slider13;
-tg1 = tg1*att + calc_tg(r1, slider1, gn, f_v)*(1-att); g1 += (tg1 - g1) * sm_f;
-tg2 = tg2*att + calc_tg(r2, slider2, gn, f_v)*(1-att); g2 += (tg2 - g2) * sm_f;
-tg3 = tg3*att + calc_tg(r3, slider3, gn, f_v)*(1-att); g3 += (tg3 - g3) * sm_f;
-tg4 = tg4*att + calc_tg(r4, slider4, gn, f_v)*(1-att); g4 += (tg4 - g4) * sm_f;
-tg5 = tg5*att + calc_tg(r5, slider5, gn, f_v)*(1-att); g5 += (tg5 - g5) * sm_f;
-tg6 = tg6*att + calc_tg(r6, slider6, gn, f_v)*(1-att); g6 += (tg6 - g6) * sm_f;
-tg7 = tg7*att + calc_tg(r7, slider7, gn, f_v)*(1-att); g7 += (tg7 - g7) * sm_f;
-tg8 = tg8*att + calc_tg(r8, slider8, gn, f_v)*(1-att); g8 += (tg8 - g8) * sm_f;
-tg9 = tg9*att + calc_tg(r9, slider9, gn, f_v)*(1-att); g9 += (tg9 - g9) * sm_f;
-tg10 = tg10*att + calc_tg(r10, slider10, gn, f_v)*(1-att); g10 += (tg10 - g10) * sm_f;
+
+tg1 = tg1*att + calc_ghost_g(r1, slider1, hys, gn, f_v, s1)*(1-att); g1 += (tg1 - g1) * sm_f;
+tg2 = tg2*att + calc_ghost_g(r2, slider2, hys, gn, f_v, s2)*(1-att); g2 += (tg2 - g2) * sm_f;
+tg3 = tg3*att + calc_ghost_g(r3, slider3, hys, gn, f_v, s3)*(1-att); g3 += (tg3 - g3) * sm_f;
+tg4 = tg4*att + calc_ghost_g(r4, slider4, hys, gn, f_v, s4)*(1-att); g4 += (tg4 - g4) * sm_f;
+tg5 = tg5*att + calc_ghost_g(r5, slider5, hys, gn, f_v, s5)*(1-att); g5 += (tg5 - g5) * sm_f;
+tg6 = tg6*att + calc_ghost_g(r6, slider6, hys, gn, f_v, s6)*(1-att); g6 += (tg6 - g6) * sm_f;
+tg7 = tg7*att + calc_ghost_g(r7, slider7, hys, gn, f_v, s7)*(1-att); g7 += (tg7 - g7) * sm_f;
+tg8 = tg8*att + calc_ghost_g(r8, slider8, hys, gn, f_v, s8)*(1-att); g8 += (tg8 - g8) * sm_f;
+tg9 = tg9*att + calc_ghost_g(r9, slider9, hys, gn, f_v, s9)*(1-att); g9 += (tg9 - g9) * sm_f;
+tg10 = tg10*att + calc_ghost_g(r10, slider10, hys, gn, f_v, s10)*(1-att); g10 += (tg10 - g10) * sm_f;
 
 out_sum = b1*g1+b2*g2+b3*g3+b4*g4+b5*g5+b6*g6+b7*g7+b8*g8+b9*g9+b10*g10;
 spl0=spl1 = slider20 ? (s0 - out_sum) : out_sum;
@@ -109,20 +136,31 @@ learn_start > 0 ? (
   last_v = time_precise();
 );
 
-@gfx 840 640
+@gfx 880 700
 gfx_r=0.01; gfx_g=0.01; gfx_b=0.015; gfx_rect(0,0,gfx_w,gfx_h);
-m_w = gfx_w / 10; v_h = gfx_h * 0.48; btn_y = v_h + 80; sld_y = btn_y + 80; pad = m_w * 0.2; 
+m_w = (gfx_w - 60) / 10; v_h = gfx_h * 0.44; btn_y = v_h + 80; sld_y = btn_y + 80; pad = m_w * 0.2; 
+m_x = gfx_w - 50;
+
 click=(mouse_cap==1 && m_latch==0); m_latch=(mouse_cap==1);
 mouse_cap == 1 ? (
-  mouse_y < v_h ? (
-    idx=floor(mouse_x/m_w); idx>=0 && idx<10 ? (slider(idx+1)=max(-100, min(0, (1-mouse_y/v_h)*100-100)););
-  ) : (
-    mouse_y > sld_y ? (
-      pct = max(0, min(1, (mouse_x - (gfx_w*0.35)) / (gfx_w*0.5)));
-      mouse_y < sld_y + 25 ? slider11=pct*100 : mouse_y < sld_y + 50 ? slider12=pct*1000 : mouse_y < sld_y + 75 ? slider13=pct : slider15=1 + pct*23;
+  mouse_x < m_x - 10 ? (
+    mouse_y < v_h ? (
+      idx=floor(mouse_x/m_w); idx>=0 && idx<10 ? (slider(idx+1)=max(-100, min(0, (1-mouse_y/v_h)*100-100)););
+    ) : (
+      mouse_y > sld_y ? (
+        pct = max(0, min(1, (mouse_x - (gfx_w*0.35)) / (gfx_w*0.5)));
+        mouse_y < sld_y + 20 ? slider11=pct*100 : 
+        mouse_y < sld_y + 40 ? slider12=pct*1000 : 
+        mouse_y < sld_y + 60 ? slider13=pct : 
+        mouse_y < sld_y + 80 ? slider15=1 + pct*23 :
+        slider21=pct*12;
+      );
     );
+  ) : (
+    mouse_y < v_h ? (slider22 = max(-100, min(0, (1-mouse_y/v_h)*100-100)); );
   );
 );
+
 click ? (
   bw = gfx_w / 4.2;
   mouse_y > btn_y && mouse_y < btn_y + 45 ? (
@@ -134,6 +172,13 @@ click ? (
     mouse_x < bw*2 ? slider17=!slider17 : mouse_x < bw*3 ? slider18=!slider18 : slider20=!slider20;
   );
 );
+
+gfx_r=1; gfx_g=0.2; gfx_b=0.4; gfx_a=0.8;
+t_px = v_h-((slider22+100)/100)*v_h;
+gfx_rect(m_x+15, 0, 10, v_h); 
+gfx_roundrect(m_x, t_px-8, 40, 16, 2, 1);
+gfx_x=m_x-5; gfx_y=v_h+15; gfx_drawstr("MASTER");
+
 i=0; loop(10,
   curr_t = slider(i+1); t_px = v_h-((curr_t+100)/100)*v_h;
   f_l=(i==0?"60Hz":i==1?"150Hz":i==2?"400Hz":i==3?"800Hz":i==4?"1.5k":i==5?"3k":i==6?"5k":i==7?"8k":i==8?"12k":"16k");
@@ -145,6 +190,7 @@ i=0; loop(10,
   gfx_a=1; gfx_r=0.6; gfx_g=0.1; gfx_b=0.1; gfx_roundrect(i*m_w+(pad/2), t_px-6, m_w-pad, 12, 2, 0);
   i += 1;
 );
+
 bw = gfx_w / 4.2;
 function draw_b(x,y,w,h,lbl,st) (
   st?(gfx_r=0.9;gfx_g=0.1;gfx_b=0.4;):(gfx_r=0;gfx_g=0.3;gfx_b=0.3;);
@@ -157,6 +203,7 @@ gfx_r=1; gfx_x=bw*0.6+12; gfx_y=btn_y+16; gfx_drawstr(sprintf(#, "%ds", slider14
 draw_b(bw, btn_y, bw, 45, (slider17 ? "MODE: RMS" : "MODE: PEAK"), slider17);
 draw_b(bw*2, btn_y, bw, 45, "LO-CUT", slider18);
 draw_b(bw*3, btn_y, bw*1.2, 45, "LISTEN NOISE", slider20);
+
 function draw_n(x,y,p,l,v,u) (
   sw = gfx_w * 0.5; gfx_r=0; gfx_g=0.1; gfx_b=0.12; gfx_rect(x,y,sw,18);
   gfx_gradrect(x,y,p*sw,18, 0,1,1,0.65, 0.001,0.003,0.005,0,0,0,0);
@@ -165,14 +212,7 @@ function draw_n(x,y,p,l,v,u) (
 );
 sx = gfx_w * 0.35;
 draw_n(sx, sld_y, slider11/100, "ATTACK", slider11, "ms");
-draw_n(sx, sld_y+25, slider12/1000, "RELEASE", slider12, "ms");
-draw_n(sx, sld_y+50, slider13, "FLOOR", slider13*100, "%");
-draw_n(sx, sld_y+75, (slider15-1)/23, "GRADIENT", slider15, "dB");
-learn_start > 0 ? (
-  gfx_r=0.05; gfx_g=0; gfx_b=0.05; gfx_a=0.98;
-  gfx_rect(gfx_w/2-140, v_h/2-60, 280, 100, 1); 
-  gfx_r=1; gfx_g=0; gfx_b=0.5; gfx_a=1;
-  gfx_roundrect(gfx_w/2-140, v_h/2-60, 280, 100, 2, 0);
-  gfx_x=gfx_w/2-110; gfx_y=v_h/2-40; gfx_drawstr("ANALYZING ROOM...");
-  gfx_x=gfx_w/2-10; gfx_y=v_h/2; gfx_drawnumber(max(0, slider14-(time_precise()-learn_start)), 0);
-);
+draw_n(sx, sld_y+20, slider12/1000, "RELEASE", slider12, "ms");
+draw_n(sx, sld_y+40, slider13, "FLOOR", slider13*100, "%");
+draw_n(sx, sld_y+60, (slider15-1)/23, "GRADIENT", slider15, "dB");
+draw_n(sx, sld_y+80, slider21/12, "HYSTERESIS", slider21, "dB");
