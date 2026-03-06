@@ -2,34 +2,19 @@
 <index version="1" name="Cyber-Forensic Suite" commit="main">
   <category name="Effects">
     <reapack name="DE-CyberDenoiserPro.jsfx" type="effect">
-      <version name="1.0">
+      <version name="1.4">
         <source main="main">https://github.com/danny1marshall1587-maker/reaper-jsfx/raw/main/Effects/DE-CyberDenoiserPro.jsfx</source>
       </version>
-      <about>
-        # Cyber-Denoiser PRO
-        10-band high-precision forensic denoiser. 
-        Optimized for 0.18% RT CPU performance.
-      </about>
     </reapack>
     <reapack name="DE-CyberDenoiserLite.jsfx" type="effect">
-      <version name="1.0">
+      <version name="1.4">
         <source main="main">https://github.com/danny1marshall1587-maker/reaper-jsfx/raw/main/Effects/DE-CyberDenoiserLite.jsfx</source>
       </version>
-      <about>
-        # Cyber-Denoiser LITE
-        5-band efficiency-first denoiser for high track counts.
-        Optimized for 0.12% RT CPU performance.
-      </about>
     </reapack>
     <reapack name="DE-CyberGate.jsfx" type="effect">
-      <version name="1.0">
+      <version name="1.4">
         <source main="main">https://github.com/danny1marshall1587-maker/reaper-jsfx/raw/main/Effects/DE-CyberGate.jsfx</source>
       </version>
-      <about>
-        # Cyber-Gate
-        Single-band ultra-low overhead forensic gate.
-        Targeting 0.05% RT CPU performance.
-      </about>
     </reapack>
   </category>
 </index>
